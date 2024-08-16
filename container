@@ -1,0 +1,66 @@
+#!/bin/sh -e
+#
+# Utility container for bootstrapping and configuring Talos Linux for Supernetes
+# (c) Dennis Marttinen 2024
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+_build() {
+        # If _FULL_RECREATE is set, append --no-cache
+        "$RUNTIME" build -t supernetes-bootstrap ${_FULL_RECREATE+--no-cache} .
+        unset _FULL_RECREATE # Don't keep re-downloading in case this loops
+}
+
+unset _RECREATE
+unset _FULL_RECREATE
+
+if [ -z "$RUNTIME" ]; then RUNTIME=$(command -v podman ||:); fi
+if [ -z "$RUNTIME" ]; then RUNTIME=$(command -v docker ||:); fi
+if [ -z "$RUNTIME" ]; then echo "Error: no container runtime found"; exit 1; fi
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+    -f | --full)
+        _FULL_RECREATE=
+        shift
+        ;;
+    -r | --recreate)
+        _RECREATE=
+        shift
+        ;;
+    *)
+        echo "Usage: $0 [-r|--recreate [-f|--full]]"
+        exit 1
+        ;;
+    esac
+done
+
+if [ -n "${_RECREATE+x}" ]; then
+    "$RUNTIME" rm -f supernetes-bootstrap
+    _build
+fi
+
+while
+    "$RUNTIME" exec -it supernetes-bootstrap bash
+    [ "$?" -eq 125 ] # Container not found
+do
+    while
+        "$RUNTIME" run -d --rm \
+            --name supernetes-bootstrap \
+            --pull never \
+            -p 13000-13009:13000-13009 \
+            -v ./bootstrap:/bootstrap:Z \
+            -v ./private/kube:/root/.kube:Z \
+            -v ./private/talos:/root/.talos:Z \
+            -v ./work:/work:Z \
+            -w /work \
+            supernetes-bootstrap
+        [ "$?" -eq 125 ] # Image not found
+    do
+        _build
+    done
+done

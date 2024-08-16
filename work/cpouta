@@ -1,0 +1,130 @@
+#!/bin/bash -e
+#
+# Idempotently install Talos Linux on cPouta
+# (c) Dennis Marttinen 2024
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# References:
+# - https://www.clouditlab.com/deploying-a-single-node-kubernetes-cluster-in-aws-using-talos/
+
+_p() { (set -x; "$@"); }
+alias openstack="_p openstack"
+shopt -s expand_aliases
+set -o pipefail
+
+{
+	_machine=talos-control-plane-1
+	_subnet=192.168.10.0/24
+	_private_ip=192.168.10.10
+	_nameservers=(1.1.1.1 1.0.0.1)
+
+	_usage() {
+		cat <<- EOF
+			Usage: $0 <up/down [-i|--image]>
+
+			-i, --image	Also remove images from OpenStack
+		EOF
+		exit "$1"
+	}
+
+	while [ "$#" -gt 0 ]; do
+		case "$1" in
+			up|down)
+				_mode="$1"
+				;;
+			-i|--image)
+				if [ "$_mode" != down ]; then
+					_usage 1
+				fi
+				_delete_images=
+				;;
+			-h|--help)
+				_usage 0
+				;;
+			*)
+				_usage 1
+		esac
+		shift
+	done
+
+	if [ -z "${_mode+x}" ]; then
+		_usage 1
+	fi
+
+	_delete() {
+		openstack "${@:3}" list -f json | jq --arg key "$1" --arg value "$2" -rc 'map(select(.[$key] == $value)) | .[].ID' | while read -r id; do openstack "${@:3}" delete "$id"; done
+	}
+
+	_delete Name "$_machine" server
+	_delete "Fixed IP Address" "$_private_ip" floating ip
+	_delete Name "$_machine" port
+	_delete Name talos security group
+	openstack router remove subnet talos talos ||:
+	_delete Name talos router
+	_delete Name talos subnet
+	_delete Name talos network
+	if [ -n "${_delete_images+x}" ]; then
+		_delete Name talos image
+	fi
+
+	if [ "$_mode" == down ]; then
+		exit 0
+	fi
+
+	# Upload disk image
+	if [ "$(openstack image list --name talos -f json | jq length)" -eq 0 ]; then
+		_talos_version=$(talosctl version --client --short | grep -Eo "v([0-9.]+)$")
+		openstack image create --disk-format raw --file <(curl -L "https://github.com/siderolabs/talos/releases/download/$_talos_version/openstack-amd64.raw.xz" | sponge | unxz -) talos
+	fi
+
+	# Create network and subnet
+	openstack network create talos
+	openstack subnet create --network talos --subnet-range "$_subnet" "${_nameservers[@]/#/--dns-nameserver=}" talos
+
+	# Configure router
+	openstack router create --external-gateway public talos
+	openstack router add subnet talos talos ||:
+
+	# Configure firewall
+	openstack security group create talos
+	openstack security group rule create --protocol tcp --dst-port 6443 --description "Kubernetes API" talos ||:
+	openstack security group rule create --protocol tcp --dst-port 50000 --description "Talos API" talos ||:
+
+	# Create ports
+	openstack port create --network talos --fixed-ip subnet=talos,ip-address="$_private_ip" --security-group talos "$_machine"
+
+	# Create floating IPs
+	openstack floating ip create --port "$_machine" public ||:
+	_public_ip=$(openstack floating ip list --port "$_machine" -f json | jq -r '.[0] | ."Floating IP Address"')
+
+	# Create baseline Talos configuration, override this with talos-bootstrap
+	talosctl gen config -f cpouta "https://$_private_ip:6443" --with-secrets secrets.yaml --config-patch @<(cat <<- EOF
+		machine:
+		  type: init # Bootstrap automatically
+		cluster:
+		  allowSchedulingOnControlPlanes: true # Single-node cluster
+	EOF
+	)
+	talosctl --talosconfig talosconfig config endpoint "$_public_ip"
+	talosctl --talosconfig talosconfig config node "$_private_ip"
+	talosctl config merge talosconfig
+
+	# Create VMs
+	openstack server create --flavor standard.large --nic port-id="$_machine" --image talos --user-data controlplane.yaml "$_machine"
+
+	# Wait for the cluster to become healthy
+	while ! talosctl health; do sleep 1; done
+	talosctl kubeconfig -fm
+	sed -i "s/$_private_ip/$_public_ip/g" ~/.kube/config
+
+    # Print IPs for convenient access
+    echo "Private IP: $_private_ip"
+    echo "Public IP:  $_public_ip"
+
+	exit
+}
