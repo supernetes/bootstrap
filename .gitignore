@@ -5,6 +5,7 @@
 /work/**
 !/work/**/
 !/work/cpouta
+!/work/ddclient.template.conf
 !/work/supernetes-cluster.yaml
 !/work/manifests/flux.yaml
 !/work/manifests/kustomization.yaml

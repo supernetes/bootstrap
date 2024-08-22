@@ -13,7 +13,9 @@
 # - https://www.clouditlab.com/deploying-a-single-node-kubernetes-cluster-in-aws-using-talos/
 
 _p() { (set -x; "$@"); }
+alias kubectl="_p kubectl"
 alias openstack="_p openstack"
+alias talosctl="_p talosctl"
 shopt -s expand_aliases
 set -o pipefail
 
@@ -54,6 +56,19 @@ set -o pipefail
 
 	if [ -z "${_mode+x}" ]; then
 		_usage 1
+	fi
+
+	# Extract DDNS FQDN if configuration is present
+	if [ -f ddclient.conf ]; then
+		_fqdn=$(tail -1 ddclient.conf)
+		if [ -z "$_fqdn" ] || [[ "$_fqdn" == *=* ]]; then
+			cat <<- EOF
+				Error: invalid DDNS FQDN: ${_fqdn:-(none)}
+				The last line in ddclient.conf must be the FQDN
+			EOF
+
+			exit 1
+		fi
 	fi
 
 	_delete() {
@@ -103,13 +118,18 @@ set -o pipefail
 	_public_ip=$(openstack floating ip list --port "$_machine" -f json | jq -r '.[0] | ."Floating IP Address"')
 
 	# Create baseline Talos configuration, override this with talos-bootstrap
-	talosctl gen config -f cpouta "https://$_private_ip:6443" --with-secrets secrets.yaml --config-patch @<(cat <<- EOF
-		machine:
-		  type: init # Bootstrap automatically
-		cluster:
-		  allowSchedulingOnControlPlanes: true # Single-node cluster
-	EOF
-	)
+	talosctl gen config -f cpouta "https://$_private_ip:6443" \
+		--with-secrets secrets.yaml \
+		--config-patch @<(cat <<- EOF
+			machine:
+			  type: init # Bootstrap automatically
+			cluster:
+			  allowSchedulingOnControlPlanes: true # Single-node cluster
+			EOF
+		) \
+		${_fqdn+--additional-sans "$_fqdn"}
+
+	# Update generated talosconfig
 	talosctl --talosconfig talosconfig config endpoint "$_public_ip"
 	talosctl --talosconfig talosconfig config node "$_private_ip"
 	talosctl config merge talosconfig
@@ -122,9 +142,61 @@ set -o pipefail
 	talosctl kubeconfig -fm
 	sed -i "s/$_private_ip/$_public_ip/g" ~/.kube/config
 
-    # Print IPs for convenient access
-    echo "Private IP: $_private_ip"
-    echo "Public IP:  $_public_ip"
+	if [ -n "$_fqdn" ]; then
+		# Deploy linuxserver/ddclient to perform periodic Dynamic DNS (DDNS) updates
+		kubectl create namespace ddns
+		kubectl -n ddns create secret generic ddns-config \
+			--from-file=ddclient.conf=ddclient.conf
+		kubectl apply -f <(cat <<- EOF
+			apiVersion: apps/v1
+			kind: Deployment
+			metadata:
+			  name: ddns
+			  namespace: ddns
+			spec:
+			  selector:
+			    matchLabels:
+			      app: ddns
+			  template:
+			    metadata:
+			      labels:
+			        app: ddns
+			    spec:
+			      containers:
+			        - name: ddclient
+			          image: linuxserver/ddclient:3.11.2
+			          securityContext:
+			            privileged: false
+			          volumeMounts:
+			            - mountPath: /defaults
+			              name: ddns-config
+			      volumes:
+			        - name: ddns-config
+			          secret:
+			            secretName: ddns-config
+			EOF
+		)
+
+		# Use the FQDN instead of the public IP
+		talosctl --talosconfig talosconfig config endpoint "$_fqdn"
+		talosctl config merge talosconfig
+
+		# Wait for the cluster to become healthy
+		while ! talosctl health; do sleep 1; done
+		talosctl kubeconfig -fm
+		sed -i "s/$_private_ip/$_fqdn/g" ~/.kube/config
+	fi
+
+	# Print IPs for convenient access
+	printf "%-12s%s\n" "Private IP:" "$_private_ip" "Public IP:" "$_public_ip"
+
+	# Print FQDN if configured
+	if [ -n "$_fqdn" ]; then
+		printf "%-12s%s\n" "FQDN:" "$_fqdn"
+	fi
+
+	# Confirm readiness
+	echo "Cluster ready."
 
 	exit
 }

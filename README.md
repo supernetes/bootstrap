@@ -31,6 +31,8 @@ Start by logging into cPouta and selecting the right project from the top left. 
 
 Then, click on your username from the top right and select `OpenStack RC File`. This will give you a file named `project_1234567-openrc.sh` which will be used by the scripts for API access. Save it into the `work` directory, which is used as the working directory of the container.
 
+Next, since cPouta only hands out ephemeral IPv4 addresses, we need to set up [Dynamic DNS (DDNS)](https://en.wikipedia.org/wiki/Dynamic_DNS) for the cluster. This can be done using external services, such as [dy.fi](https://www.dy.fi/) (Finland-only), or any other service supported by [ddclient](https://ddclient.net/). A configuration template is provided in [`ddclient.template.conf`](work/ddclient.template.conf). Copying this file to `ddclient.conf` and filling it out will set up automatic dynamic DNS reconciliation in the cluster during bringup.
+
 Finally, inside the [container](#usage), run
 
 ```shell
