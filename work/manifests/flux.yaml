@@ -1,0 +1,23 @@
+# Flux configuration for reconciling the Supernetes controller
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: supernetes
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: https://github.com/supernetes/deploy
+  ref:
+    branch: master
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: supernetes
+  namespace: flux-system
+spec:
+  interval: 1m
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: supernetes
