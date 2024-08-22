@@ -6,5 +6,7 @@
 !/work/**/
 !/work/cpouta
 !/work/supernetes-cluster.yaml
+!/work/manifests/flux.yaml
+!/work/manifests/kustomization.yaml
 !/work/patch/cilium.yaml
 !/work/patch/single-node.yaml
