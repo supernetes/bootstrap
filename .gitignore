@@ -7,7 +7,9 @@
 !/work/cpouta
 !/work/ddclient.template.conf
 !/work/supernetes-cluster.yaml
-!/work/manifests/flux.yaml
+!/work/manifests/flux/**
+!/work/manifests/gateway-api/**
+!/work/manifests/supernetes/**
 !/work/manifests/kustomization.yaml
 !/work/patch/cilium.yaml
 !/work/patch/single-node.yaml
