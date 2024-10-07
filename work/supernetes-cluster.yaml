@@ -5,6 +5,10 @@ cluster:
     hardening:
       enabled: false # Disable NetworkPolicy hardening for evaluation purposes
       audit-mode: false # Audit mode is not needed without hardening
+    gateway-api:
+      enabled: true # Supernetes ingress is provided by Gateway API
+      host-network: true # Single-node solution, avoid the need for L2 or BGP
+      privileged-ports: true # Allow Envoy to bind to ports <1024
   flux: # Configuration for Flux (GitOps) (optional)
     # Install specific (extra) Flux components, see https://fluxcd.io/flux/components/ for details
     components: source-controller,kustomize-controller # (optional)
