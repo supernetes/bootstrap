@@ -1,0 +1,6 @@
+resources:
+  - manifests/gateway-class.yaml
+  # Pull in Gateway API CRDs, note that Cilium may not support all of these yet! Refer to
+  # https://docs.cilium.io/en/latest/network/servicemesh/gateway-api/gateway-api/ details.
+  - https://github.com/kubernetes-sigs/gateway-api//config/crd?ref=v1.2.0
+  - https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/v1.2.0/config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml

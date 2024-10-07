@@ -1,0 +1,5 @@
+namespace: supernetes
+
+resources:
+  - manifests/gateway.yaml
+  - manifests/namespace.yaml

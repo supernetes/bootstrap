@@ -1,2 +1,4 @@
 resources:
-  - flux.yaml
+  - flux
+  - gateway-api
+  - supernetes
