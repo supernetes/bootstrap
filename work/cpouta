@@ -94,7 +94,7 @@ set -o pipefail
 	# Upload disk image
 	if [ "$(openstack image list --name talos -f json | jq length)" -eq 0 ]; then
 		_talos_version=$(talosctl version --client --short | grep -Eo "v([0-9.]+)$")
-		openstack image create --disk-format raw --file <(curl -L "https://github.com/siderolabs/talos/releases/download/$_talos_version/openstack-amd64.raw.xz" | sponge | unxz -) talos
+		openstack image create --disk-format raw --file <(curl -fL "https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/$_talos_version/openstack-amd64.raw.xz" | sponge | unxz -) talos
 	fi
 
 	# Create network and subnet
