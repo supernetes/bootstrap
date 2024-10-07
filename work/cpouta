@@ -107,6 +107,8 @@ set -o pipefail
 
 	# Configure firewall
 	openstack security group create talos
+	openstack security group rule create --protocol tcp --dst-port 80 --description "HTTP" talos ||:
+	openstack security group rule create --protocol tcp --dst-port 443 --description "HTTPS" talos ||:
 	openstack security group rule create --protocol tcp --dst-port 6443 --description "Kubernetes API" talos ||:
 	openstack security group rule create --protocol tcp --dst-port 50000 --description "Talos API" talos ||:
 
