@@ -1,6 +1,15 @@
+# The `cilium` GatewayClass should technically be deployed automatically,
+# however, that is not reliable in practice. We can specify the resource here,
+# but the Helm labels and annotations must also be present, otherwise Cilium
+# won't deploy without complaining.
 apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass
 metadata:
   name: cilium
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: cilium
+    meta.helm.sh/release-namespace: kube-system
 spec:
   controllerName: io.cilium/gateway-controller
