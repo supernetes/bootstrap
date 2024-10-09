@@ -7,9 +7,12 @@
 !/work/cpouta
 !/work/ddclient.template.conf
 !/work/supernetes-cluster.yaml
+!/work/manifests/cert-approver/**
 !/work/manifests/flux/**
 !/work/manifests/gateway-api/**
+!/work/manifests/metrics-server/**
 !/work/manifests/supernetes/**
 !/work/manifests/kustomization.yaml
 !/work/patch/cilium.yaml
+!/work/patch/metrics-server.yaml
 !/work/patch/single-node.yaml

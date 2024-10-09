@@ -15,6 +15,7 @@ cluster:
     all-namespaces: false # Set to "false" to make Flux only watch the installation namespace (optional)
   patches: # Any cluster-wide patches to apply when creating the configuration with `talosctl gen config` (optional)
     - "@patch/cilium.yaml"
+    - "@patch/metrics-server.yaml"
     - "@patch/single-node.yaml"
   manifests: manifests # Kustomization directory for additional manifests to be applied into the cluster (optional)
 

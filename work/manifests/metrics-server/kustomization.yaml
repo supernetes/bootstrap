@@ -1,0 +1,11 @@
+helmCharts:
+  - name: metrics-server
+    repo: https://kubernetes-sigs.github.io/metrics-server/
+    namespace: kube-system
+    releaseName: metrics-server
+    valuesInline:
+      service:
+        labels:
+          # Show Metrics Server in `kubectl cluster-info`
+          kubernetes.io/cluster-service: "true"
+          kubernetes.io/name: "metrics-server"

@@ -1,0 +1,6 @@
+# Metrics Server requires Kubelet certificate autorotation, see
+# https://www.talos.dev/v1.8/kubernetes-guides/configuration/deploy-metrics-server/
+machine:
+  kubelet:
+    extraArgs:
+      rotate-server-certificates: true
