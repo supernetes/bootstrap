@@ -137,7 +137,7 @@ set -o pipefail
 	talosctl config merge talosconfig
 
 	# Create VMs
-	openstack server create --flavor standard.large --nic port-id="$_machine" --image talos --user-data controlplane.yaml "$_machine"
+	openstack server create --flavor standard.xlarge --nic port-id="$_machine" --image talos --user-data controlplane.yaml "$_machine"
 
 	# Wait for the cluster to become healthy
 	while ! talosctl health; do sleep 1; done
