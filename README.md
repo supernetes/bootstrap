@@ -1,6 +1,6 @@
 # Bootstrapping Utilities for Supernetes
 
-This repository contains tooling that helps with setting up a [Talos Linux](https://www.talos.dev/) Kubernetes cluster for developing and evaluating [Supernetes](https://github.com/twelho/talos-bootstrap.git). More specifically, the tools help with
+This repository contains tooling that helps with setting up a [Talos Linux](https://www.talos.dev/) Kubernetes cluster for developing and evaluating [Supernetes](https://github.com/supernetes/supernetes). More specifically, the tools help with
 
 - creating an unprovisioned Talos Linux cluster in [CSC's cPouta](https://research.csc.fi/-/cpouta) OpenStack environment, and
 - bootstrapping an unprovisioned Talos Linux cluster using [talos-bootstrap](https://github.com/twelho/talos-bootstrap).
@@ -62,9 +62,12 @@ The full configuration is applied using [talos-bootstrap](https://github.com/twe
    bootstrap supernetes-cluster.yaml
    ```
 
-   and wait for the bootstrap process to finish. Your cluster should now be configured with [Flux](https://fluxcd.io/) automatically reconciling in the Supernetes controller.
+   and wait for the bootstrap process to finish. Your cluster should now be configured with [FluxCD](https://fluxcd.io/) automatically reconciling in the Supernetes controller.
 
 Refer to the documentation of [talos-bootstrap](https://github.com/twelho/talos-bootstrap) for details, such as how to apply patches and additional manifests etc.
+
+> [!IMPORTANT]
+> Don't forget to additionally apply the Supernetes controller configuration Secret (see the [configuration section in the Supernetes repository](https://github.com/supernetes/supernetes?tab=readme-ov-file#configuration)) with `kubectl apply -f controller.yaml`.
 
 ## Authors
 
