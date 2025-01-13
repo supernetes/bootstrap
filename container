@@ -10,9 +10,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 _build() {
-        # If _FULL_RECREATE is set, append --no-cache
-        "$RUNTIME" build -t supernetes-bootstrap ${_FULL_RECREATE+--no-cache} .
-        unset _FULL_RECREATE # Don't keep re-downloading in case this loops
+    # If _FULL_RECREATE is set, append --no-cache
+    # If using Podman, the build process needs to be explicitly parallelized
+    case "$RUNTIME" in */podman) _IS_PODMAN=1;; esac
+    "$RUNTIME" build ${_IS_PODMAN+--jobs "$(nproc)"} -t supernetes-bootstrap ${_FULL_RECREATE+--no-cache} .
+    unset _FULL_RECREATE # Don't keep re-downloading in case this loops
 }
 
 unset _RECREATE
