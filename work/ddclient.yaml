@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ddns
+  namespace: ddns
+spec:
+  selector:
+    matchLabels:
+      app: ddns
+  template:
+    metadata:
+      labels:
+        app: ddns
+    spec:
+      containers:
+        - name: ddclient
+          image: alpine:3
+          command:
+            - /bin/sh
+            - -xec
+            - |
+              apk --no-cache add ddclient
+              exec ddclient -foreground -file /config/ddclient.conf
+          securityContext:
+            privileged: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - mountPath: /config
+              name: ddclient-config
+      volumes:
+        - name: ddclient-config
+          secret:
+            secretName: ddclient-config
+            defaultMode: 0400
