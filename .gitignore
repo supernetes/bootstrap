@@ -15,5 +15,6 @@
 !/work/manifests/supernetes/**
 !/work/manifests/kustomization.yaml
 !/work/patch/cilium.yaml
+!/work/patch/dns.yaml
 !/work/patch/metrics-server.yaml
 !/work/patch/single-node.yaml
