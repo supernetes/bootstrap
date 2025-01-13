@@ -145,39 +145,11 @@ set -o pipefail
 	sed -i "s/$_private_ip/$_public_ip/g" ~/.kube/config
 
 	if [ -n "$_fqdn" ]; then
-		# Deploy linuxserver/ddclient to perform periodic Dynamic DNS (DDNS) updates
+		# Deploy ddclient to perform periodic Dynamic DNS (DDNS) updates
 		kubectl create namespace ddns
-		kubectl -n ddns create secret generic ddns-config \
+		kubectl -n ddns create secret generic ddclient-config \
 			--from-file=ddclient.conf=ddclient.conf
-		kubectl apply -f <(cat <<- EOF
-			apiVersion: apps/v1
-			kind: Deployment
-			metadata:
-			  name: ddns
-			  namespace: ddns
-			spec:
-			  selector:
-			    matchLabels:
-			      app: ddns
-			  template:
-			    metadata:
-			      labels:
-			        app: ddns
-			    spec:
-			      containers:
-			        - name: ddclient
-			          image: linuxserver/ddclient:3.11.2
-			          securityContext:
-			            privileged: false
-			          volumeMounts:
-			            - mountPath: /defaults
-			              name: ddns-config
-			      volumes:
-			        - name: ddns-config
-			          secret:
-			            secretName: ddns-config
-			EOF
-		)
+		kubectl apply -f ddclient.yaml
 
 		# Use the FQDN instead of the public IP
 		talosctl --talosconfig talosconfig config endpoint "$_fqdn"

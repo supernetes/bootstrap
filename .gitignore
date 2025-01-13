@@ -6,6 +6,7 @@
 !/work/**/
 !/work/cpouta
 !/work/ddclient.template.conf
+!/work/ddclient.yaml
 !/work/supernetes-cluster.yaml
 !/work/manifests/cert-approver/**
 !/work/manifests/flux/**
