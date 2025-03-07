@@ -96,9 +96,9 @@ RUN update-ca-certificates && \
     register-python-argcomplete pipx >> ~/.bashrc && pipx ensurepath && \
     pipx install python-openstackclient && ~/.local/bin/openstack complete >> ~/.bashrc && \
     echo "pipx install -e /bootstrap &> /dev/null &" >> ~/.bashrc && \
-    echo 'export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"' >> ~/.bashrc
+    echo 'export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"' >> ~/.bashrc && \
+    echo 'alias watchlogs="while :; do kubectl -n supernetes logs -f deployments/supernetes-controller; sleep 1; done"' >> ~/.bashrc
 #    PATH="$HOME/.krew/bin:$PATH" kubectl krew install ...
 
 # Sleep forever, use `exec` to enter the container
 ENTRYPOINT ["/bin/sh", "-c", "trap 'exit 0' INT TERM; sleep infinity & wait"]
-
