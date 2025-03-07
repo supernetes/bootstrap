@@ -20,6 +20,17 @@ spec:
             - -xec
             - |
               apk --no-cache add ddclient
+              
+              # Some DDNS providers, such as dy.fi, have a 7-day expiration for DDNS records if they're not updated,
+              # even if the associated IP hasn't changed. ddclient isn't smart enough to figure that out, so remove
+              # its cache every 5 days to force it to perform an update and keep the record alive.
+              remove_cache() {
+                while sleep 5d; do
+                  rm -f /var/cache/ddclient/ddclient.cache
+                done
+              }
+              
+              remove_cache &
               exec ddclient -foreground -file /config/ddclient.conf
           securityContext:
             privileged: false
