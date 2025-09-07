@@ -35,9 +35,6 @@ spec:
           securityContext:
             privileged: false
             allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
           volumeMounts:
             - mountPath: /config
               name: ddclient-config
