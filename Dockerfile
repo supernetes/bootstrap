@@ -2,7 +2,7 @@
 FROM alpine:3 as base
 
 RUN apk --no-cache upgrade && \
-    apk --no-cache add bash bash-completion cosign curl g++ git helm jq k9s kubectl kustomize less linux-headers make moreutils nano nano-syntax openssl pipx python3-dev yq
+    apk --no-cache add bash bash-completion ca-certificates cosign curl g++ git helm jq k9s kubectl kustomize less linux-headers make moreutils nano nano-syntax openssl pipx python3-dev yq
 
 # Build environment for tooling
 FROM base as build
